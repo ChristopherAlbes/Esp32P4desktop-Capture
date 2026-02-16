@@ -84,4 +84,7 @@ D7,8,GPIO 8,Datenleitung Bit 7
 ![images (2)](https://github.com/user-attachments/assets/6a309298-24a0-42c2-8492-58008b966c13)
 
 ![images (1)](https://github.com/user-attachments/assets/4c4e6fc6-cbd2-494c-86cb-fd2fb2095860)
+![P1490807](https://github.com/user-attachments/assets/70aa287e-8599-42a3-a8c4-af03939b2d79)
+![P1490808](https://github.com/user-attachments/assets/73059fde-884a-4da8-a837-a310e7483efe)
+![P1490809](https://github.com/user-attachments/assets/f212c9a1-bdd1-40b5-8135-1886e0ac414f)
 
