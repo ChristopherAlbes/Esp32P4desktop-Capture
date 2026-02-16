@@ -1,0 +1,107 @@
+#include <WiFi.h>
+#include <WiFiClient.h>
+#include <Arduino_GFX_Library.h>
+#include <TJpg_Decoder.h>
+
+const char* ssid = "FRITZ!Box 7560 EZ";
+const char* password = "96251392846705471467";
+
+WiFiServer server(8888);
+
+// 2x 256 KB Puffer = 512 KB Gesamtspeicher
+#define BUF_SIZE 262144
+uint8_t* buffer1;
+uint8_t* buffer2;
+uint8_t* activeBuffer;
+
+int yOffset = 25;
+unsigned long frameCount = 0, lastMillis = 0;
+int currentFPS = 0;
+
+// Hardware-Pins für ESP32-P4 Nano
+Arduino_DataBus *bus = new Arduino_ESP32PAR8(26, 32, 27, -1, 1, 2, 3, 4, 5, 6, 7, 8);
+Arduino_GFX *gfx = new Arduino_ILI9486(bus, 33, 3, false);
+
+// Callback für JPEG-Blöcke
+bool output_func(int16_t x, int16_t y, uint16_t w, uint16_t h, uint16_t* bitmap) {
+  gfx->draw16bitBeRGBBitmap(x, y + yOffset, bitmap, w, h);
+  return true;
+}
+
+void setup() {
+  Serial.begin(115200);
+  setCpuFrequencyMhz(360); 
+
+  // Puffer im internen RAM anlegen
+  buffer1 = (uint8_t*)malloc(BUF_SIZE);
+  buffer2 = (uint8_t*)malloc(BUF_SIZE);
+  activeBuffer = buffer1;
+
+  if (!gfx->begin(30000000)) Serial.println("Display Fehler!");
+  
+  // Rotation und Mirror-Fix
+  gfx->setRotation(3);
+  bus->sendCommand(0x36);
+  bus->sendData(0x28); // Hier 0x28, 0x48 oder 0x88 testen falls seitlich
+
+  gfx->fillScreen(0x0000);
+  gfx->setTextSize(2);
+
+  WiFi.begin(ssid, password);
+  while (WiFi.status() != WL_CONNECTED) delay(500);
+  
+  server.begin();
+  TJpgDec.setCallback(output_func);
+  TJpgDec.setSwapBytes(true);
+  
+  Serial.println("System bereit mit 512KB Double Buffer!");
+}
+
+void loop() {
+  WiFiClient client = server.available();
+  if (client) {
+    client.setNoDelay(true);
+    while (client.connected()) {
+      if (client.available() >= 8) {
+        char header[4];
+        client.read((uint8_t*)header, 4);
+        
+        if (memcmp(header, "SNAP", 4) == 0) {
+          uint32_t imgSize;
+          client.read((uint8_t*)&imgSize, 4);
+
+          if (imgSize < BUF_SIZE) {
+            // Daten in den aktuellen Puffer lesen
+            size_t totalRead = 0;
+            while (totalRead < imgSize && client.connected()) {
+              int r = client.read(activeBuffer + totalRead, imgSize - totalRead);
+              if (r > 0) totalRead += r;
+            }
+            
+            if (totalRead == imgSize) {
+              // Bild zeichnen
+              TJpgDec.drawJpg(0, 0, activeBuffer, imgSize);
+              
+              // FPS Berechnung
+              frameCount++;
+              if (millis() - lastMillis >= 1000) {
+                currentFPS = frameCount; frameCount = 0; lastMillis = millis();
+                gfx->setCursor(10, 2);
+                gfx->setTextColor(0x07E0, 0x0000); 
+                gfx->printf("FPS: %d  DoubleBuf: 512KB", currentFPS);
+              }
+
+              // Puffer-Tausch (Ping-Pong Prinzip)
+              activeBuffer = (activeBuffer == buffer1) ? buffer2 : buffer1;
+              
+              // Bestätigung senden
+              client.write("OK", 2); 
+            }
+          }
+        } else {
+          while(client.available() > 0) client.read();
+        }
+      }
+    }
+  }
+}
