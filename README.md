@@ -57,3 +57,25 @@ Was du noch beachten solltest:
 Sicherheit: Dein WLAN-Passwort steht aktuell im Klartext im Code. Wenn du das Repository öffentlich machst, solltest du diese Daten entfernen oder eine credentials.h nutzen, die in der .gitignore steht.
 
 Display-Pins: Überprüfe, ob die Pin-Belegung (26, 32, 27...) exakt deinem Shield/Verkabelung entspricht.
+
+
+Info zum Anklemmen des ESP32P4 Nano 
+
+Display Funktion,ESP32-P4 Pin (Code),Hardware GPIO,Beschreibung
+DC / RS,26,GPIO 26,Data/Command Selection
+WR,32,GPIO 32,Write Clock
+RD,27,GPIO 27,Read (Lese-Signal)
+CS,33,GPIO 33,Chip Select (Aktivierung)
+RESET,9,GPIO 9,Reset (Vorschlag: Nicht Pin 3!)
+---,---,---,---
+D0,1,GPIO 1,Datenleitung Bit 0
+D1,2,GPIO 2,Datenleitung Bit 1
+D2,3,GPIO 3,Datenleitung Bit 2
+D3,4,GPIO 4,Datenleitung Bit 3
+D4,5,GPIO 5,Datenleitung Bit 4
+D5,6,GPIO 6,Datenleitung Bit 5
+D6,7,GPIO 7,Datenleitung Bit 6
+D7,8,GPIO 8,Datenleitung Bit 7
+
+
+
