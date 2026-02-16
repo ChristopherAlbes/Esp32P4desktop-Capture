@@ -1,0 +1,35 @@
+import cv2, numpy as np, socket, struct
+from mss import mss
+
+ESP_IP = "192.168.178.XX" # Deine IP hier! Wichtig !
+PORT = 8888
+
+def start_stream():
+    sct = mss()
+    monitor = sct.monitors[1]
+    
+    try:
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.connect((ESP_IP, PORT))
+        sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+        print("Stream aktiv...")
+
+        while True:
+            # Screenshot & Resize
+            img = np.array(sct.grab(monitor))
+            frame = cv2.resize(cv2.cvtColor(img, cv2.COLOR_BGRA2BGR), (480, 320), interpolation=cv2.INTER_NEAREST)
+            
+            # JPEG Encodieren
+            _, buffer = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 50])
+            data = buffer.tobytes()
+
+            # Senden
+            sock.sendall(b"SNAP" + struct.pack("<I", len(data)) + data)
+
+            # Warten auf OK (Flow Control)
+            if sock.recv(2) != b"OK": break
+
+    except Exception as e: print(f"Fehler: {e}")
+    finally: sock.close()
+
+if __name__ == "__main__": start_stream()
