@@ -3,8 +3,8 @@
 #include <Arduino_GFX_Library.h>
 #include <TJpg_Decoder.h>
 
-const char* ssid = "FRITZ!Box 7560 EZ";
-const char* password = "96251392846705471467";
+const char* ssid = "ssid HIER REIN!";
+const char* password = "Passwort Hier Rein!";
 
 WiFiServer server(8888);
 
