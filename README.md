@@ -80,3 +80,8 @@ D7,8,GPIO 8,Datenleitung Bit 7
 
 
 ![ESP32-P4-NANO-details-inter](https://github.com/user-attachments/assets/f2326e90-7a85-402a-a54f-e0142344a446)
+![ESP32-P4-NANO-details-size](https://github.com/user-attachments/assets/3d88de47-0637-4cb8-9c88-7880ea8899d4)
+![images (2)](https://github.com/user-attachments/assets/6a309298-24a0-42c2-8492-58008b966c13)
+
+![images (1)](https://github.com/user-attachments/assets/4c4e6fc6-cbd2-494c-86cb-fd2fb2095860)
+
