@@ -10,6 +10,7 @@ Double Buffering: Verwendet zwei 256 KB Puffer (insgesamt 512 KB), um Daten zu e
 
 Netzwerk: Startet einen TCP-Server auf Port 8888.
 
+
 JPEG Decoding: Nutzt die TJpg_Decoder Bibliothek für schnelles Hardware-nahes Rendering.
 
 Live-Statistik: Echtzeit-Anzeige der Frames per Second (FPS) direkt auf dem Display.
@@ -78,4 +79,4 @@ D6,7,GPIO 7,Datenleitung Bit 6
 D7,8,GPIO 8,Datenleitung Bit 7
 
 
-
+![ESP32-P4-NANO-details-inter](https://github.com/user-attachments/assets/f2326e90-7a85-402a-a54f-e0142344a446)
