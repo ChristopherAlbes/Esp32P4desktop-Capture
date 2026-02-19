@@ -1,0 +1,64 @@
+import socket
+import numpy as np
+import mss
+import time
+from PIL import Image
+
+# --- KONFIGURATION ---
+ESP_IP = "192.168.XXX.XX" 
+PORT = 12345
+WIDTH, HEIGHT = 480, 320
+STRIPE_W = 160 # Wir teilen das Bild in nur 3 große vertikale Streifen
+
+sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+sock.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, 1048576)
+
+sct = mss.mss()
+monitor = sct.monitors[1]
+
+print("Brute-Force Speed Modus: Maximale Übertragung...")
+
+# Wir schicken das Bild in 3 Spalten (Streifen)
+# Frame 1: Linker Streifen, Frame 2: Mittlerer, Frame 3: Rechter...
+current_stripe = 0
+
+try:
+    while True:
+        # 1. Bildaufnahme (so schnell wie möglich)
+        sct_img = sct.grab(monitor)
+        img_pil = Image.fromarray(np.array(sct_img)).resize((WIDTH, HEIGHT), Image.NEAREST)
+        frame = np.array(img_pil)
+        
+        # 2. Blitz-Konvertierung zu RGB565
+        r, g, b = frame[:,:,0].astype(np.uint16), frame[:,:,1].astype(np.uint16), frame[:,:,2].astype(np.uint16)
+        rgb565 = ((b >> 3) << 11) | ((g >> 2) << 5) | (r >> 3)
+        rgb565_swapped = ((rgb565 & 0xFF) << 8) | (rgb565 >> 8)
+
+        # 3. Den aktuellen Streifen über alle Zeilen schicken
+        x_start = current_stripe * STRIPE_W
+        x_end = x_start + STRIPE_W
+        
+        # Wir schicken Pakete mit jeweils 2 Zeilen des Streifens (ca. 640 Bytes)
+        # Das ist die perfekte Größe für WLAN-Stabilität
+        for y in range(0, HEIGHT, 2):
+            # Zeile y
+            header1 = np.array([y, x_start], dtype='<u2').tobytes()
+            data1 = rgb565_swapped[y, x_start:x_end].tobytes()
+            
+            # Zeile y+1
+            header2 = np.array([y+1, x_start], dtype='<u2').tobytes()
+            data2 = rgb565_swapped[y+1, x_start:x_end].tobytes()
+            
+            sock.sendto(header1 + data1 + header2 + data2, (ESP_IP, PORT))
+            
+            # Nur alle 20 Pakete eine winzige Pause
+            if y % 40 == 0:
+                time.sleep(0.0001)
+
+        # Zum nächsten Streifen wechseln
+        current_stripe = (current_stripe + 1) % 3
+        
+        # Keine künstliche Pause am Ende - wir wollen Full Speed!
+
+except KeyboardInterrupt:
+    print("Stop.")
