@@ -1,101 +1,90 @@
-| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C5 | ESP32-C6 | ESP32-C61 | ESP32-S2 | ESP32-S3 | ESP32-P4 | ESP32-H2 |
-| ----------------- | ----- | -------- | -------- | -------- | -------- | --------- | -------- | -------- | -------- | -------- |
+# Esp32P4desktop-Capture
 
-# Wi-Fi Fast Scan Example
+ESP32-P4 JPEG Network Display Receiver
+Dieses Projekt ermöglicht es einem ESP32-P4 Nano, JPEG-Bilder über eine WiFi-Verbindung zu empfangen und diese mit hoher Geschwindigkeit auf einem ILI9486 Display darzustellen. Durch die Implementierung eines Double Buffering Systems (2x 256 KB) wird eine flüssige Anzeige mit FPS-Anzeige erreicht.
 
-(See the README.md file in the upper level 'examples' directory for more information about examples.)
+🚀 Features
+Hardware: Optimiert für ESP32-P4 (360 MHz CPU Frequenz).
 
-This example shows how to use the scan functionality of the Wi-Fi driver of ESP for connecting to an AP.
+Double Buffering: Verwendet zwei 256 KB Puffer (insgesamt 512 KB), um Daten zu empfangen, während das vorherige Bild noch verarbeitet wird (Ping-Pong-Prinzip).
 
-Two scan methods are supported: fast scan and all channel scan.
+Netzwerk: Startet einen TCP-Server auf Port 8888.
 
-* `fast scan`: in this mode, scan finishes right after a matching AP is detected, even if channels are not completely scanned. You can set thresholds for signal strength, as well as select desired authentication modes provided by the AP's. The Wi-Fi driver will ignore AP's that fail to meet mentioned criteria.
 
-* `all channel scan`: scan will end only after all channels are scanned; the Wi-Fi driver will store 4 of the fully matching AP's. Sort methods for AP's include rssi and authmode. After the scan, the Wi-Fi driver selects the AP that fits best based on the sort.
+JPEG Decoding: Nutzt die TJpg_Decoder Bibliothek für schnelles Hardware-nahes Rendering.
 
-After the scan, the Wi-Fi driver will try to connect. Because it needs to to allocate precious dynamic memory to store matching AP's, and, most of the cases, connect to the AP with the strongest reception, it does not need to record all the AP's matched. The number of matches stored is limited to 4 in order to limit dynamic memory usage. Among the 4 matches,  AP's are allowed to carry the same SSID name and all possible authentication modes - Open, WEP, WPA and WPA2.
+Live-Statistik: Echtzeit-Anzeige der Frames per Second (FPS) direkt auf dem Display.
 
-## How to use example
+🛠 Hardware-Konfiguration
+Display: ILI9486 (8-Bit Parallel Bus).
 
-Before project configuration and build, be sure to set the correct chip target using `idf.py set-target <chip_name>`.
+Bus-Anbindung: Arduino_ESP32PAR8 (Pins 26, 32, 27 etc.).
 
-### Hardware Required
+WiFi: Verbindet sich mit dem konfigurierten lokalen Netzwerk.
 
-* A development board with ESP32/ESP32-S2/ESP32-C3 SoC (e.g., ESP32-DevKitC, ESP-WROVER-KIT, etc.)
-* A USB cable for Power supply and programming
+📁 Protokoll-Details
+Der Server erwartet Datenpakete in folgendem Format:
 
-### Configure the project
+Header: SNAP (4 Bytes)
 
-Open the project configuration menu (`idf.py menuconfig`).
+Größe: Bildgröße in Bytes (4 Bytes, Little Endian)
 
-In the `Example Configuration` menu:
+Payload: Die JPEG-Rohdaten
 
-* Use `WiFi SSID` to set the SSID.
-* Use `WiFi Password` to set the password.
+Antwort: Der ESP32 sendet nach erfolgreichem Empfang ein OK zurück, um das nächste Bild anzufordern.
 
-Optional: If you need, change the other options according to your requirements.
+📋 Installation
+Stelle sicher, dass die folgenden Bibliotheken in der Arduino IDE installiert sind:
 
-### Build and Flash
+WiFi.h
 
-Build the project and flash it to the board, then run monitor tool to view serial output:
+Arduino_GFX_Library
 
-Run `idf.py -p PORT flash monitor` to build, flash and monitor the project.
+TJpg_Decoder
 
-(To exit the serial monitor, type ``Ctrl-]``.)
+Passe die ssid und das password im Code an.
 
-See the Getting Started Guide for all the steps to configure and use the ESP-IDF to build projects.
+Wähle das richtige Board (ESP32-P4) und lade den Code hoch.
 
-* [ESP-IDF Getting Started Guide on ESP32](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/get-started/index.html)
-* [ESP-IDF Getting Started Guide on ESP32-S2](https://docs.espressif.com/projects/esp-idf/en/latest/esp32s2/get-started/index.html)
-* [ESP-IDF Getting Started Guide on ESP32-C3](https://docs.espressif.com/projects/esp-idf/en/latest/esp32c3/get-started/index.html)
+⚙️ Technische Details (Code-Auszug)
+C++
+#define BUF_SIZE 262144 // 256 KB pro Puffer
+uint8_t* buffer1;
+uint8_t* buffer2;
+uint8_t* activeBuffer; // Zeigt immer auf den aktuell zu beschreibenden Puffer
+Durch das Umschalten von activeBuffer zwischen buffer1 und buffer2 wird verhindert, dass der Netzwerk-Stack den Zeichenvorgang blockiert.
 
-## Example Output
+Was du noch beachten solltest:
+Sicherheit: Dein WLAN-Passwort steht aktuell im Klartext im Code. Wenn du das Repository öffentlich machst, solltest du diese Daten entfernen oder eine credentials.h nutzen, die in der .gitignore steht.
 
-As you run the example, you will see the following log:
+Display-Pins: Überprüfe, ob die Pin-Belegung (26, 32, 27...) exakt deinem Shield/Verkabelung entspricht.
 
-```
-I (616) wifi:wifi firmware version: 6bff005
-I (616) wifi:wifi certification version: v7.0
-I (616) wifi:config NVS flash: enabled
-I (616) wifi:config nano formatting: disabled
-I (626) wifi:Init data frame dynamic rx buffer num: 32
-I (626) wifi:Init management frame dynamic rx buffer num: 32
-I (636) wifi:Init management short buffer num: 32
-I (636) wifi:Init dynamic tx buffer num: 32
-I (646) wifi:Init static rx buffer size: 1600
-I (646) wifi:Init static rx buffer num: 10
-I (646) wifi:Init dynamic rx buffer num: 32
-I (656) wifi_init: rx ba win: 6
-I (656) wifi_init: tcpip mbox: 32
-I (666) wifi_init: udp mbox: 6
-I (666) wifi_init: tcp mbox: 6
-I (666) wifi_init: tcp tx win: 5744
-I (676) wifi_init: tcp rx win: 5744
-I (676) wifi_init: tcp mss: 1440
-I (686) wifi_init: WiFi IRAM OP enabled
-I (686) wifi_init: WiFi RX IRAM OP enabled
-I (696) phy_init: phy_version 4660,0162888,Dec 23 2020
-I (796) wifi:mode : sta (xx:xx:xx:xx:xx:xx)
-I (796) wifi:enable tsf
-I (806) wifi:new:<8,1>, old:<1,0>, ap:<255,255>, sta:<8,1>, prof:1
-I (806) wifi:state: init -> auth (b0)
-I (826) wifi:state: auth -> assoc (0)
-I (836) wifi:state: assoc -> run (10)
-I (876) wifi:connected with SSID, aid = 1, channel 8, 40U, bssid = xx:xx:xx:xx:xx:xx
-I (876) wifi:security: WPA2-PSK, phy: bgn, rssi: -56
-I (886) wifi:pm start, type: 1
 
-I (966) wifi:AP's beacon interval = 102400 us, DTIM period = 1
-W (1106) wifi:<ba-add>idx:0 (ifx:0, xx:xx:xx:xx:xx:xx), tid:0, ssn:0, winSize:64
-I (2086) scan: got ip:192.168.68.110
-I (2086) esp_netif_handlers: sta ip: 192.168.68.110, mask: 255.255.255.0, gw: 192.168.68.1
+Info zum Anklemmen des ESP32P4 Nano 
 
-```
+Display Funktion,ESP32-P4 Pin (Code),Hardware GPIO,Beschreibung
+DC / RS,26,GPIO 26,Data/Command Selection
+WR,32,GPIO 32,Write Clock
+RD,27,GPIO 27,Read (Lese-Signal)
+CS,33,GPIO 33,Chip Select (Aktivierung)
+RESET,9,GPIO 9,Reset (Vorschlag: Nicht Pin 3!)
+---,---,---,---
+D0,1,GPIO 1,Datenleitung Bit 0
+D1,2,GPIO 2,Datenleitung Bit 1
+D2,3,GPIO 3,Datenleitung Bit 2
+D3,4,GPIO 4,Datenleitung Bit 3
+D4,5,GPIO 5,Datenleitung Bit 4
+D5,6,GPIO 6,Datenleitung Bit 5
+D6,7,GPIO 7,Datenleitung Bit 6
+D7,8,GPIO 8,Datenleitung Bit 7
 
-## Running the example on ESP Chips without Wi-Fi
 
-This example can run on ESP Chips without Wi-Fi using ESP-Hosted. See the [Two-Chip Solution](../README.md#wi-fi-examples-with-two-chip-solution) section in the upper level `README.md` for information.
+![ESP32-P4-NANO-details-inter](https://github.com/user-attachments/assets/f2326e90-7a85-402a-a54f-e0142344a446)
+![ESP32-P4-NANO-details-size](https://github.com/user-attachments/assets/3d88de47-0637-4cb8-9c88-7880ea8899d4)
+![images (2)](https://github.com/user-attachments/assets/6a309298-24a0-42c2-8492-58008b966c13)
 
-## Troubleshooting
+![images (1)](https://github.com/user-attachments/assets/4c4e6fc6-cbd2-494c-86cb-fd2fb2095860)
+![P1490807](https://github.com/user-attachments/assets/70aa287e-8599-42a3-a8c4-af03939b2d79)
+![P1490808](https://github.com/user-attachments/assets/73059fde-884a-4da8-a837-a310e7483efe)
+![P1490809](https://github.com/user-attachments/assets/f212c9a1-bdd1-40b5-8135-1886e0ac414f)
 
-For any technical queries, please open an [issue](https://github.com/espressif/esp-idf/issues) on GitHub. We will get back to you soon.
